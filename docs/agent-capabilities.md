@@ -129,12 +129,25 @@ skills are dashboard-published.
   in-app MCP Store / extension store.
 
 ### MCP config
-- Single global file shared with Gemini CLI / Code Companion. Reported path:
-  `~/.gemini/settings/mcp_config.json` (Linux/macOS); under `%USERPROFILE%`
-  on Windows. Earlier docs cited `~/.gemini/antigravity/mcp_config.json`.
+- Dedicated global file: `~/.gemini/config/mcp_config.json` (Linux/macOS),
+  shared across the Antigravity IDE/CLI (2.0+). Created on demand — absent
+  until the first server is added. On Windows assume the analogous
+  `%USERPROFILE%\.gemini\config\mcp_config.json` (unverified).
+  - This is **not** `~/.gemini/settings.json` — that file is Gemini-CLI's
+    (which stores MCP servers inline under `mcpServers`). Antigravity moved
+    MCP to its own file; do not write servers into `settings.json`.
+  - Superseded legacy paths still seen in older guides:
+    `~/.gemini/antigravity/mcp_config.json` (early IDE) and
+    `~/.gemini/antigravity-cli/mcp_config.json` (pre-migration CLI).
 - JSON. Top-level key: `mcpServers`.
-- stdio: `command`, `args`, `env`. HTTP: `url`, `headers`.
-- Env interpolation: undocumented.
+- stdio: `command`, `args`, `env`. HTTP/remote: the URL field is **`serverUrl`**
+  (NOT `url`/`httpUrl`); a wrong field name fails silently at tool-call time.
+  Plus `headers`. Server-level `timeout` is not supported; JSON comments are
+  not supported.
+- **Env interpolation: `${VAR}`/`$VAR` are NOT expanded** (reported day-one
+  bug). Values in `env`/`headers` must be inlined literally; `${workspaceFolder}`
+  is also unsupported (use absolute paths). Contrast Gemini CLI, which *does*
+  expand `${VAR}` in its own `settings.json`.
 
 ### Behavioural quirks
 - Preview product; tied to personal Gmail accounts. Chrome required for the
@@ -145,9 +158,13 @@ skills are dashboard-published.
 
 ### Sources
 - https://antigravity.google/docs/skills
-- https://antigravity.google/docs/mcp
+- https://antigravity.google/docs/mcp (JS-rendered SPA; not machine-readable)
 - https://codelabs.developers.google.com/getting-started-google-antigravity
 - https://codelabs.developers.google.com/getting-started-with-antigravity-skills
+- MCP path/shape (config/mcp_config.json, serverUrl, no ${VAR}), 2026-06:
+  https://medium.com/google-cloud/configuring-mcp-servers-and-skills-for-antigravity-cli-and-ide-a938c7eebb78
+- https://codelabs.developers.google.com/google-workspace-mcp-antigravity
+- Project-local MCP ignored by CLI: https://github.com/google-antigravity/antigravity-cli/issues/60
 
 ---
 

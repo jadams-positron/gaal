@@ -122,8 +122,8 @@ func TestMCPConfigPath_Unknown(t *testing.T) {
 }
 
 func TestMCPConfigPath_EmptyWhenNotSet(t *testing.T) {
-	// antigravity has an empty global_mcp_config_file.
-	_, ok := agent.GlobalMCPConfigPath("antigravity", "/home/user")
+	// generic has an empty global_mcp_config_file.
+	_, ok := agent.GlobalMCPConfigPath("generic", "/home/user")
 	if ok {
 		t.Error("expected ok=false for agent with empty GlobalMCPConfigFile")
 	}

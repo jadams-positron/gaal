@@ -64,7 +64,8 @@ agents:
     supports_generic_project: true
     project_skills_dir: ""
     global_skills_dir: ~/.gemini/antigravity/skills
-    global_mcp_config_file: ""
+    # Dedicated file, not ~/.gemini/settings.json (Gemini-CLI's). See agent-capabilities.md.
+    global_mcp_config_file: ~/.gemini/config/mcp_config.json
     project_mcp_config_file: ""
     project_skills_search: *cps
     global_skills_search:
