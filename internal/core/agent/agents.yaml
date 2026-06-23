@@ -46,6 +46,21 @@ search_defaults:
     - ~/.claude/skills
 
 agents:
+  # Antigravity CLI (`agy`) — replaced the deprecated Gemini CLI (2026-06-18).
+  # Skills use the vendor-neutral .agents convention; MCP uses agy's own
+  # global file (shared with the Antigravity IDE). See agent-capabilities.md.
+  agy:
+    supports_generic_project: true
+    supports_generic_global: true
+    project_skills_dir: ""
+    global_skills_dir: ""
+    # Shared with the Antigravity IDE; project-local MCP is ignored by the CLI.
+    global_mcp_config_file: ~/.gemini/config/mcp_config.json
+    project_mcp_config_file: ""
+    project_skills_search: *cps
+    global_skills_search: *cgs
+    pm_skills_search: []
+
   amp:
     supports_generic_project: true
     project_skills_dir: ""
@@ -183,20 +198,6 @@ agents:
       - ~/.claude/skills
     pm_skills_search:
       - ~/.cursor/extensions
-
-  gemini-cli:
-    supports_generic_project: true
-    project_skills_dir: ""
-    global_skills_dir: ~/.gemini/skills
-    global_mcp_config_file: ~/.gemini/settings.json
-    project_mcp_config_file: ""
-    project_skills_search: *cps
-    global_skills_search:
-      - ~/.gemini/skills
-      - ~/.agents/skills
-      - ~/.copilot/skills
-    pm_skills_search:
-      - ~/.gemini/extensions
 
   generic:
     # Shared-convention agent. Owns .agents/skills (project) and

@@ -130,7 +130,7 @@ Quick reference:
 | `mcps` | `merge` | `true` (default) = upsert; `false` = overwrite |
 | _(top-level)_ | `telemetry` | `true` / `false`: opt in/out of anonymous usage telemetry (only `global` and `user` config files; workspace cannot override — see [docs/config.md](config.md#scope-restriction-policy)) |
 
-Supported agent names: `amp`, `claude-code`, `cursor`, `github-copilot`, `cline`, `roo`, `codex`, `continue`, `gemini-cli`, `goose`, `kilo`, `kiro-cli`, `opencode`, `openhands`, `trae`, `warp`, `windsurf`, and more. Run `gaal info agent` for the full list.
+Supported agent names: `amp`, `claude-code`, `cursor`, `github-copilot`, `cline`, `roo`, `codex`, `continue`, `agy`, `goose`, `kilo`, `kiro-cli`, `opencode`, `openhands`, `trae`, `warp`, `windsurf`, and more. Run `gaal info agent` for the full list.
 
 ---
 

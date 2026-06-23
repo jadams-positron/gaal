@@ -225,7 +225,7 @@ func TestGenericAgentRegistered(t *testing.T) {
 func TestGenericProjectFlaggedAgents(t *testing.T) {
 	// Every agent that previously pointed its project_skills_dir at
 	// .agents/skills must now delegate to generic.
-	want := []string{"amp", "antigravity", "cline", "codex", "cursor", "gemini-cli", "opencode", "warp"}
+	want := []string{"agy", "amp", "antigravity", "cline", "codex", "cursor", "opencode", "warp"}
 	for _, name := range want {
 		info, ok := agent.Lookup(name)
 		if !ok {
@@ -242,9 +242,9 @@ func TestGenericProjectFlaggedAgents(t *testing.T) {
 }
 
 func TestGenericGlobalFlaggedAgents(t *testing.T) {
-	// Only cline and warp previously pointed their global_skills_dir at
-	// ~/.agents/skills.
-	want := []string{"cline", "warp"}
+	// cline, warp, and agy delegate their global skills to the shared
+	// ~/.agents/skills convention.
+	want := []string{"agy", "cline", "warp"}
 	for _, name := range want {
 		info, ok := agent.Lookup(name)
 		if !ok {

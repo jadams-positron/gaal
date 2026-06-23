@@ -11,7 +11,7 @@
 > This file is the *narrative* counterpart: what each agent actually supports,
 > in what format, with what gotchas, and where the canonical vendor docs live.
 >
-> Last reviewed: 2026-05-15.
+> Last reviewed: 2026-06-23.
 
 ## Reading this document
 
@@ -40,6 +40,7 @@ encode. `n/a` means the agent has no MCP feature at all.
 
 | Agent | Native skills | Project MCP | MCP format | Supported OS |
 |-------|--------------|-------------|------------|--------------|
+| agy | yes (SKILL.md) | **no** (global-only) | JSON, key `mcpServers` | darwin / linux / windows |
 | amp | yes (SKILL.md) | yes (`.amp/settings.json`) | JSONC, key `amp.mcpServers` | darwin / linux / windows |
 | antigravity | yes (SKILL.md) | **no** (global-only) | JSON, key `mcpServers` | darwin / linux¹ / windows |
 | augment | yes (in plugin) | yes (`.mcp.json`) | JSON, key `mcpServers` | darwin / linux / windows |
@@ -49,7 +50,6 @@ encode. `n/a` means the agent has no MCP feature at all.
 | codex | yes (SKILL.md) | yes (trusted-only) | TOML, key `[mcp_servers.*]` | darwin / linux / windows |
 | continue | no (rules instead) | yes (`.continue/`) | YAML, key `mcpServers` | darwin / linux / windows |
 | cursor | no (rules instead) | yes (`.cursor/mcp.json`) | JSON, key `mcpServers` | darwin / linux / windows |
-| gemini-cli | yes (via extension) | yes (`.gemini/settings.json`) | JSON, key `mcpServers` | darwin / linux / windows |
 | generic | yes (convention only) | n/a | n/a | darwin / linux / windows |
 | github-copilot | no (custom agents) | yes (`.vscode/mcp.json`) | JSON, key **`servers`** | darwin / linux / windows |
 | goose | yes (SKILL.md) | no (global only) | YAML, key `extensions` | darwin / linux / windows |
@@ -66,6 +66,63 @@ encode. `n/a` means the agent has no MCP feature at all.
 ¹ Antigravity Linux support is limited to "select distros" in preview.
 ² Windsurf has a Skills feature but no documented `SKILL.md` disk format —
 skills are dashboard-published.
+
+---
+
+## agy
+
+> Antigravity CLI. The Go binary `agy` that replaced the deprecated Gemini
+> CLI for consumer tiers on 2026-06-18 (paid Gemini Enterprise / Cloud API
+> keys are unaffected). It is the CLI surface of the Antigravity family — see
+> [antigravity](#antigravity) for the IDE.
+> **The official `antigravity.google` docs are JS-rendered SPAs that can't be
+> machine-read; the on-disk paths below are corroborated across migration
+> guides, not verified against primary docs.**
+
+### Skills
+- Native `SKILL.md`; the agent semantic-matches the prompt against `description`.
+- agy itself reads global skills from `~/.gemini/antigravity-cli/skills/`
+  (CLI-only) and the shared `~/.gemini/skills/`; project skills from
+  `<workspace>/.agents/skills/`.
+- **gaal targets the vendor-neutral `.agents/skills` / `~/.agents/skills`
+  convention** (the `generic` agent) for both scopes rather than the
+  `~/.gemini/` paths.
+- Global rules/context: `~/.gemini/GEMINI.md` (AGENTS.md also read).
+
+### Plugins / extensions
+- Gemini "extensions" are now Antigravity "plugins". `agy plugin import gemini`
+  imports the legacy `~/.gemini/extensions/` and stages plugin bundles under
+  `~/.gemini/antigravity-cli/plugins/` (and the shared `~/.gemini/config/plugins/`).
+- A bundle may carry `plugin.json` plus optional `mcp_config.json`,
+  `hooks.json`, `skills/`, `agents/`, `rules/`.
+
+### MCP config
+- Global (shared with the Antigravity IDE): `~/.gemini/config/mcp_config.json`.
+  Per-tool dirs (`~/.gemini/antigravity-cli/mcp/`) are generated from it. This
+  is the single path gaal writes — no vendor-neutral global MCP standard exists.
+- **No per-workspace MCP** — project-local MCP is ignored by the CLI
+  (antigravity-cli issue #60).
+- JSON. Top-level key: `mcpServers`.
+- stdio: `command`, `args`, `env`. HTTP/remote: the URL field is **`serverUrl`**
+  (NOT `url`/`httpUrl`); a wrong name fails silently at tool-call time.
+- **Env interpolation: `${VAR}`/`$VAR` are NOT expanded** — inline values
+  literally; `${workspaceFolder}` is unsupported too.
+
+### Behavioural quirks
+- macOS, Linux, Windows. (One guide reports Windows is WSL2-only; others say
+  native PowerShell/CMD — unresolved.) Binary installs to `~/.local/bin/agy`.
+- Closed-source, unlike the Apache-2.0 Gemini CLI it replaced.
+- General CLI settings live in `~/.gemini/antigravity-cli/settings.json`
+  (separate from MCP config).
+
+### Sources
+- Deprecation/transition (official):
+  https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/
+- https://github.com/google-gemini/gemini-cli/discussions/27274
+- https://antigravity.google/docs/gcli-migration (JS-rendered SPA; not machine-readable)
+- Paths (skills/MCP/plugins under ~/.gemini), 2026-06:
+  https://medium.com/google-cloud/configuring-mcp-servers-and-skills-for-antigravity-cli-and-ide-a938c7eebb78
+- Project-local MCP ignored by CLI: https://github.com/google-antigravity/antigravity-cli/issues/60
 
 ---
 
@@ -533,57 +590,6 @@ skills are dashboard-published.
 ### Sources
 - https://cursor.com/docs/cli/mcp
 - https://cursor.com/help/customization/extensions
-
----
-
-## gemini-cli
-
-### Skills
-- Native — **only as part of an installed extension**. Skills placed at
-  `<extension>/skills/<name>/SKILL.md`. There is no documented standalone
-  `~/.gemini/skills/`; skills ride along with extensions.
-- Extensions (and their skills) live under `~/.gemini/extensions/<name>/`.
-- Anthropic-style `SKILL.md` frontmatter (`name`, `description`).
-
-### Plugins / extensions
-- First-class **Gemini CLI Extensions**.
-- On disk: `~/.gemini/extensions/<extension>/` (a copy is made at install;
-  `gemini extensions update` pulls source changes). Project-level
-  extensions directory: undocumented.
-- Manifest: `gemini-extension.json` at the extension root. Properties:
-  `name` (lowercase), `version`, `description`, `mcpServers`,
-  `contextFileName` (defaults to `GEMINI.md`), `excludeTools`, `plan`.
-  Extensions can also include `commands/*.toml`, themes, hooks, sub-agents
-  and `skills/`.
-- Install:
-  `gemini extensions install <github-url-or-local-path>` (optional `--ref`,
-  `--auto-update`). Enable/disable per-workspace or globally via
-  `gemini extensions enable|disable <name>`.
-
-### MCP config
-- User: `~/.gemini/settings.json`. Project: `<workspace>/.gemini/settings.json`.
-- JSON. Top-level key: `mcpServers`. Sibling `mcp` object holds global
-  allow/exclude lists (`mcp.allowed`, `mcp.excluded`, `mcp.serverCommand`).
-- stdio: `command`, `args`, `env`, `cwd`, `timeout`, `trust`. HTTP:
-  `httpUrl`, `headers`, `timeout`. SSE: `url`, `headers`, `timeout`.
-- Env interpolation: `$VAR` / `${VAR}` on all platforms; `%VAR%` on Windows.
-
-### Behavioural quirks
-- Platforms: macOS, Linux, Windows.
-- Tool-name normalisation replaces non-`[A-Za-z0-9_.\-:]` characters with
-  underscores → silent name collisions possible.
-- Underscores in server names discouraged (policy engine misinterprets);
-  use hyphens.
-- MCP connection failures only show a small hint at startup — silent
-  failure mode without explicit diagnostic commands.
-- `settings.json` edits need a restart to take effect.
-
-### Sources
-- https://geminicli.com/docs/tools/mcp-server/
-- https://geminicli.com/docs/extensions/
-- https://geminicli.com/docs/extensions/reference/
-- https://geminicli.com/docs/extensions/writing-extensions/
-- https://geminicli.com/docs/cli/tutorials/mcp-setup/
 
 ---
 
@@ -1132,7 +1138,7 @@ plan is grounded in real cases, not hypothetical ones:
    (GUI app). Drives the existing
    `warnSkillsTargetingClaudeDesktop` check.
 
-2. **`supports_mcp_project` (bool)** — false today for `antigravity`,
+2. **`supports_mcp_project` (bool)** — false today for `agy`, `antigravity`,
    `claude-desktop`, `cline`, `goose`, `windsurf`, `zencoder` (and
    uncertain for `openhands` whose project file is opt-in). Warrants a
    `WarnMCPProjectUnsupported` warning when a `global: false` entry
