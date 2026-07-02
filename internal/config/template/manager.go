@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	"gaal/internal/config"
-	"gaal/internal/core/agent"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/core/agent"
 )
 
 const separator = "# ─────────────────────────────────────────────────────────────────────────────"

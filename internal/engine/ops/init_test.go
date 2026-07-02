@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"gaal/internal/config"
-	configtemplate "gaal/internal/config/template"
+	"github.com/getgaal/gaal/internal/config"
+	configtemplate "github.com/getgaal/gaal/internal/config/template"
 )
 
 // TestInit_TemplateHasAllSections verifies the embedded template contains

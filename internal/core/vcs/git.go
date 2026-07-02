@@ -11,7 +11,7 @@ import (
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 
-	"gaal/internal/urlx"
+	"github.com/getgaal/gaal/internal/urlx"
 )
 
 // VcsGit implements the VCS interface for Git repositories using go-git

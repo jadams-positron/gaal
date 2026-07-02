@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 func TestGenerate_ContainsAllSections(t *testing.T) {

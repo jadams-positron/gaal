@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 // captureStdout is defined in testutil_test.go (same package).

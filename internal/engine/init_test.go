@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 func newTestEngine(t *testing.T) *Engine {

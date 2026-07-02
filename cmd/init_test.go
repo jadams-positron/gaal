@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"gaal/internal/config"
-	"gaal/internal/engine"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/engine"
 )
 
 // resetInitFlags restores the package-level flag state between cases.

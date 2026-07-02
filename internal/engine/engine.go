@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"gaal/internal/config"
-	"gaal/internal/content"
-	"gaal/internal/engine/hooks"
-	"gaal/internal/engine/ops"
-	"gaal/internal/engine/render"
-	"gaal/internal/mcp"
-	"gaal/internal/repo"
-	"gaal/internal/skill"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/content"
+	"github.com/getgaal/gaal/internal/engine/hooks"
+	"github.com/getgaal/gaal/internal/engine/ops"
+	"github.com/getgaal/gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/mcp"
+	"github.com/getgaal/gaal/internal/repo"
+	"github.com/getgaal/gaal/internal/skill"
 )
 
 // Re-exported types from the render sub-package for backward compatibility.

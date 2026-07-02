@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 // MigrateResult holds the summary of what would be migrated.

@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	ioyaml "gaal/internal/core/io/yaml"
+	ioyaml "github.com/getgaal/gaal/internal/core/io/yaml"
 )
 
 type sample struct {

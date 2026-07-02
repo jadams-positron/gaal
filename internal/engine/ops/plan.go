@@ -5,11 +5,11 @@ import (
 	"log/slog"
 	"os"
 
-	"gaal/internal/content"
-	"gaal/internal/engine/render"
-	"gaal/internal/mcp"
-	"gaal/internal/repo"
-	"gaal/internal/skill"
+	"github.com/getgaal/gaal/internal/content"
+	"github.com/getgaal/gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/mcp"
+	"github.com/getgaal/gaal/internal/repo"
+	"github.com/getgaal/gaal/internal/skill"
 )
 
 // SyncPlan computes what a sync would do without performing any writes.

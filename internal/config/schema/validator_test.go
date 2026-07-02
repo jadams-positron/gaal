@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"gaal/internal/config/schema"
+	"github.com/getgaal/gaal/internal/config/schema"
 )
 
 type validStruct struct {

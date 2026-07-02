@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"gaal/internal/config"
-	"gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/engine/render"
 )
 
 // Manager owns the hooks declared in the merged Config and is responsible for
