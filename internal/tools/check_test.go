@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"gaal/internal/config"
-	"gaal/internal/tools"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/tools"
 )
 
 func TestCollect_EmptyConfig_ReturnsNil(t *testing.T) {

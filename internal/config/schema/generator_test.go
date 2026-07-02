@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"gaal/internal/config/schema"
+	"github.com/getgaal/gaal/internal/config/schema"
 )
 
 type sampleStruct struct {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"gaal/internal/urlx"
+	"github.com/getgaal/gaal/internal/urlx"
 )
 
 // redactingHandler wraps a slog.Handler and runs urlx.Redact on every string

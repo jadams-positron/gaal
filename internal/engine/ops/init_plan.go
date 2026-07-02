@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"sort"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 // Scope is the gaal.yaml destination scope selected by the user during init.

@@ -8,7 +8,7 @@ import (
 
 	"github.com/pterm/pterm"
 
-	"gaal/internal/engine/ops"
+	"github.com/getgaal/gaal/internal/engine/ops"
 )
 
 // Mode is the high-level init strategy chosen by the user.

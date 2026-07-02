@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"gaal/internal/config"
-	"gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/engine/render"
 )
 
 // recorder is a test executor that captures every hook invocation in order

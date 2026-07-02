@@ -15,11 +15,11 @@ import (
 	"strings"
 	"sync"
 
-	"gaal/internal/config"
-	"gaal/internal/core/agent"
-	"gaal/internal/discover"
-	"gaal/internal/httpx"
-	"gaal/internal/urlx"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/core/agent"
+	"github.com/getgaal/gaal/internal/discover"
+	"github.com/getgaal/gaal/internal/httpx"
+	"github.com/getgaal/gaal/internal/urlx"
 )
 
 // serverEntry mirrors the MCP server JSON structure used by Claude Desktop,

@@ -13,11 +13,11 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
-	"gaal/cmd/internal/wizard"
-	"gaal/internal/config"
-	"gaal/internal/engine"
-	"gaal/internal/engine/ops"
-	"gaal/internal/telemetry"
+	"github.com/getgaal/gaal/cmd/internal/wizard"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/engine"
+	"github.com/getgaal/gaal/internal/engine/ops"
+	"github.com/getgaal/gaal/internal/telemetry"
 )
 
 var (

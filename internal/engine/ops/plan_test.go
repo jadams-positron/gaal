@@ -3,7 +3,7 @@ package ops
 import (
 	"testing"
 
-	"gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/engine/render"
 )
 
 func TestPlanRepos_NotCloned(t *testing.T) {

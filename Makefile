@@ -3,8 +3,8 @@ BIN           := $(DIST_DIR)/gaal
 GOBIN         := $(shell go env GOPATH)/bin
 VERSION       ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_TIME    := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-LDFLAGS       := -ldflags "-X gaal/cmd.Version=$(VERSION) -X gaal/cmd.BuildTime=$(BUILD_TIME)"
-LDFLAGS_R     := -ldflags "-X gaal/cmd.Version=$(VERSION) -X gaal/cmd.BuildTime=$(BUILD_TIME) -s -w -buildid= -extldflags '-static'"
+LDFLAGS       := -ldflags "-X github.com/getgaal/gaal/cmd.Version=$(VERSION) -X github.com/getgaal/gaal/cmd.BuildTime=$(BUILD_TIME)"
+LDFLAGS_R     := -ldflags "-X github.com/getgaal/gaal/cmd.Version=$(VERSION) -X github.com/getgaal/gaal/cmd.BuildTime=$(BUILD_TIME) -s -w -buildid= -extldflags '-static'"
 
 # Sandbox directory — override with: make sandbox SANDBOX=/my/dir
 SANDBOX  ?= $(shell mktemp -d /tmp/gaal-test-XXXXXX)

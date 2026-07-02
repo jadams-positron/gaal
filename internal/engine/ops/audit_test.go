@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/engine/render"
 )
 
 // makeSkill creates <workDir>/<relDir>/<skillName>/SKILL.md with optional

@@ -8,7 +8,7 @@ import (
 
 	"github.com/pterm/pterm"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 // ── Info (engine method) ──────────────────────────────────────────────────────

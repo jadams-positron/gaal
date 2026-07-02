@@ -6,10 +6,10 @@ import (
 	"log/slog"
 	"sort"
 
-	"gaal/internal/config"
-	"gaal/internal/core/agent"
-	"gaal/internal/engine/render"
-	"gaal/internal/mcp"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/core/agent"
+	"github.com/getgaal/gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/mcp"
 )
 
 // BuildImportCandidates runs the same discovery passes as Audit, filters them

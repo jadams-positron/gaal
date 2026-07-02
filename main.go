@@ -1,6 +1,6 @@
 package main
 
-import "gaal/cmd"
+import "github.com/getgaal/gaal/cmd"
 
 func main() {
 	cmd.Execute()

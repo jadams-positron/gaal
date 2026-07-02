@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gaal/internal/content"
-	"gaal/internal/discover"
-	"gaal/internal/engine/render"
-	"gaal/internal/mcp"
-	"gaal/internal/repo"
-	"gaal/internal/skill"
+	"github.com/getgaal/gaal/internal/content"
+	"github.com/getgaal/gaal/internal/discover"
+	"github.com/getgaal/gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/mcp"
+	"github.com/getgaal/gaal/internal/repo"
+	"github.com/getgaal/gaal/internal/skill"
 )
 
 // Collect gathers the current status of all resources without side effects.

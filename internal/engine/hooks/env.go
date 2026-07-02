@@ -3,7 +3,7 @@ package hooks
 import (
 	"strings"
 
-	"gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/engine/render"
 )
 
 // planEnv builds the map of GAAL_* variables describing what sync touched.

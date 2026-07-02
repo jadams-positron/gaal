@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gaal/internal/runner"
-	"gaal/internal/urlx"
+	"github.com/getgaal/gaal/internal/runner"
+	"github.com/getgaal/gaal/internal/urlx"
 )
 
 // VcsBazaar implements VCS for Bazaar repositories.

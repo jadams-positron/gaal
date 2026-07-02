@@ -12,8 +12,8 @@ import (
 	gogitconfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing/object"
 
-	"gaal/internal/config"
-	"gaal/internal/core/vcs"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/core/vcs"
 )
 
 // ---------------------------------------------------------------------------

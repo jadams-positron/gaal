@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"gaal/internal/core/agent"
-	"gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/core/agent"
+	"github.com/getgaal/gaal/internal/engine/render"
 )
 
 func TestListAgents_AllHaveNames(t *testing.T) {

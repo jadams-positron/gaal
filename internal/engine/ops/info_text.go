@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"gaal/internal/config"
-	"gaal/internal/core/agent"
-	"gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/core/agent"
+	"github.com/getgaal/gaal/internal/engine/render"
 )
 
 // ── Text renderers ───────────────────────────────────────────────────────────
