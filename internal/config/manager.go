@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -94,6 +95,7 @@ type ConfigRepo struct {
 // ConfigSkill defines a skill source to install.
 type ConfigSkill struct {
 	Source       string       `yaml:"source"                 json:"source"                 jsonschema:"description=Skill source: GitHub shorthand (owner/repo), HTTPS URL, or local path" validate:"required"`
+	Registry     string       `yaml:"registry,omitempty"     json:"registry,omitempty"     jsonschema:"description=Optional registry provenance for registry-installed skills (for example skills.sh)"`
 	Agents       []string     `yaml:"agents,omitempty"       json:"agents,omitempty"       jsonschema:"description=Target agent identifiers; use [\"*\"] to target all detected agents"`
 	Global       bool         `yaml:"global,omitempty"       json:"global,omitempty"       jsonschema:"description=When true the skill is installed globally under ~/.<agent>/skills/ instead of the project directory"`
 	TargetSubdir string       `yaml:"target_subdir,omitempty" json:"target_subdir,omitempty" jsonschema:"description=Optional subdirectory under the resolved agent skills directory where selected skills are installed"`
@@ -396,7 +398,7 @@ func (Config) JSONSchemaExtend(s *jsonschema.Schema) {
 //   - telemetry: src wins when explicitly set (non-nil) and scope ≤ maxscope
 //     declared on the field (currently ScopeUser — workspace cannot override).
 //   - repositories: map merge — src wins on key conflict.
-//   - skills: upsert by Source + TargetSubdir — src entry replaces any
+//   - skills: upsert by install identity — src entry replaces any
 //     existing entry with the same install identity.
 //   - content: append entries; path mappings are identity-bearing enough that
 //     users may intentionally repeat sources for different targets.
@@ -462,7 +464,7 @@ func (c *Config) mergeFrom(src *Config, scope ConfigScope) {
 }
 
 // deduplicate removes duplicate entries within this Config, keeping the first
-// occurrence. Skills are keyed by Source + TargetSubdir; content entries are
+// occurrence. Skills are keyed by install identity; content entries are
 // keyed by their full mapping identity; MCPs and Tools are keyed by Name.
 func (c *Config) deduplicate() {
 	c.Skills = deduplicate(c.Skills, skillIdentity)
@@ -472,8 +474,30 @@ func (c *Config) deduplicate() {
 }
 
 func skillIdentity(s ConfigSkill) string {
-	slog.Debug("building skill identity", "source", s.Source, "targetSubdir", s.TargetSubdir)
-	return s.Source + "\x00" + filepath.ToSlash(filepath.Clean(s.TargetSubdir))
+	slog.Debug("building skill identity", "source", s.Source, "registry", s.Registry, "agents", len(s.Agents), "global", s.Global, "targetSubdir", s.TargetSubdir)
+	return strings.Join([]string{
+		s.Source,
+		s.Registry,
+		normalizedAgentsIdentity(s.Agents),
+		fmt.Sprint(s.Global),
+		filepath.ToSlash(filepath.Clean(s.TargetSubdir)),
+	}, "\x00")
+}
+
+func normalizedAgentsIdentity(agents []string) string {
+	slog.Debug("normalizing agents identity", "count", len(agents))
+	if len(agents) == 0 {
+		return ""
+	}
+	cp := append([]string(nil), agents...)
+	sort.Strings(cp)
+	out := cp[:0]
+	for _, a := range cp {
+		if len(out) == 0 || out[len(out)-1] != a {
+			out = append(out, a)
+		}
+	}
+	return strings.Join(out, "\x1f")
 }
 
 func contentIdentity(c ConfigContent) string {
@@ -716,11 +740,12 @@ func (c *Config) validateMCPItems() error {
 // []string so downstream code does not need to care.
 func (s *ConfigSkill) UnmarshalYAML(node *yaml.Node) error {
 	slog.Debug("decoding config skill", "line", node.Line, "kind", node.Kind)
-	if err := ioyaml.ValidateMappingKeys(node, "source", "agents", "global", "target_subdir", "select", "tools"); err != nil {
+	if err := ioyaml.ValidateMappingKeys(node, "source", "registry", "agents", "global", "target_subdir", "select", "tools"); err != nil {
 		return err
 	}
 	type rawSkill struct {
 		Source       string       `yaml:"source"`
+		Registry     string       `yaml:"registry,omitempty"`
 		Agents       yaml.Node    `yaml:"agents,omitempty"`
 		Global       bool         `yaml:"global,omitempty"`
 		TargetSubdir string       `yaml:"target_subdir,omitempty"`
@@ -733,6 +758,7 @@ func (s *ConfigSkill) UnmarshalYAML(node *yaml.Node) error {
 	}
 
 	s.Source = raw.Source
+	s.Registry = raw.Registry
 	s.Global = raw.Global
 	s.TargetSubdir = raw.TargetSubdir
 	s.Select = raw.Select

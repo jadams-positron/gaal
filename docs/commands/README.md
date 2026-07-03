@@ -15,6 +15,7 @@ bootstrap, `PersistentPreRunE`, sandbox, telemetry), see
 | [`gaal sync`](sync.md) | Clone/update repos, install skills, upsert MCP entries (one-shot or `--service`) |
 | [`gaal status`](status.md) | Snapshot of the current resource state on disk vs. config |
 | [`gaal info`](info.md) | Detailed per-entry card for a resource type |
+| [`gaal skill`](skill.md) | Search and install registry-backed skills |
 | [`gaal init`](init.md) | Bootstrap a `gaal.yaml` (empty, imported, or via wizard) |
 | [`gaal audit`](audit.md) | Discover every skill / MCP server present on this machine |
 | [`gaal agents`](agents.md) | List registered coding agents and detect installed ones |
