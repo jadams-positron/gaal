@@ -945,9 +945,13 @@ func TestLoad_SkillsDeduplicated(t *testing.T) {
 	p := writeYAML(t, `
 skills:
   - source: owner/repo
-    agents: ["*"]
+    registry: skills.sh
+    agents: ["claude", "codex"]
+    global: true
   - source: owner/repo
-    agents: ["claude"]
+    registry: skills.sh
+    agents: ["codex", "claude"]
+    global: true
 `)
 	cfg, err := Load(p)
 	if err != nil {
@@ -957,8 +961,29 @@ skills:
 		t.Errorf("expected 1 skill after intra-file dedup, got %d", len(cfg.Skills))
 	}
 	// First occurrence must be kept.
-	if len(cfg.Skills[0].Agents) == 0 || cfg.Skills[0].Agents[0] != "*" {
-		t.Errorf("expected first occurrence (agents=[*]) to be kept, got %v", cfg.Skills[0].Agents)
+	if len(cfg.Skills[0].Agents) != 2 || cfg.Skills[0].Agents[0] != "claude" {
+		t.Errorf("expected first occurrence to be kept, got %v", cfg.Skills[0].Agents)
+	}
+}
+
+func TestLoad_SkillsWithDifferentAgentsAreDistinct(t *testing.T) {
+	p := writeYAML(t, `
+skills:
+  - source: owner/repo
+    registry: skills.sh
+    agents: ["*"]
+    global: true
+  - source: owner/repo
+    registry: skills.sh
+    agents: ["claude"]
+    global: true
+`)
+	cfg, err := Load(p)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(cfg.Skills) != 2 {
+		t.Errorf("expected different agent identities to survive, got %d", len(cfg.Skills))
 	}
 }
 
@@ -1016,10 +1041,10 @@ func TestMergeFrom_SkillsDeduplicated(t *testing.T) {
 	dir := t.TempDir()
 
 	lower := filepath.Join(dir, "lower.yaml")
-	os.WriteFile(lower, []byte("skills:\n  - source: owner/repo\n    agents: [\"*\"]\n"), 0o644)
+	os.WriteFile(lower, []byte("skills:\n  - source: owner/repo\n    registry: skills.sh\n    agents: [\"claude\", \"codex\"]\n    global: true\n    select: [old]\n"), 0o644)
 
 	higher := filepath.Join(dir, "higher.yaml")
-	os.WriteFile(higher, []byte("skills:\n  - source: owner/repo\n    agents: [\"claude\"]\n"), 0o644)
+	os.WriteFile(higher, []byte("skills:\n  - source: owner/repo\n    registry: skills.sh\n    agents: [\"codex\", \"claude\"]\n    global: true\n    select: [new]\n"), 0o644)
 
 	cfgLow, _ := Load(lower)
 	cfgHigh, _ := Load(higher)
@@ -1032,8 +1057,8 @@ func TestMergeFrom_SkillsDeduplicated(t *testing.T) {
 		t.Errorf("expected 1 skill after cross-level dedup, got %d", len(merged.Skills))
 	}
 	// Higher-priority level wins.
-	if len(merged.Skills[0].Agents) == 0 || merged.Skills[0].Agents[0] != "claude" {
-		t.Errorf("expected higher-priority entry (agents=[claude]) to win, got %v", merged.Skills[0].Agents)
+	if len(merged.Skills[0].Select) == 0 || merged.Skills[0].Select[0] != "new" {
+		t.Errorf("expected higher-priority entry to win, got select %v", merged.Skills[0].Select)
 	}
 }
 

@@ -114,6 +114,7 @@ Quick reference:
 | `repositories` | `type` | `git`, `hg`, `svn`, `bzr`, `tar`, `zip` |
 | `repositories` | `version` | Branch, tag, commit, or SVN revision |
 | `skills` | `source` | GitHub shorthand, full URL, SSH URL, or local path |
+| `skills` | `registry` | Optional provenance for registry-installed skills, e.g. `skills.sh` |
 | `skills` | `agents` | Agent names or `["*"]` to auto-detect |
 | `skills` | `global` | `true` = user-wide, `false` = project-local (default) |
 | `skills` | `target_subdir` | Optional subdirectory under the resolved agent skills dir |
@@ -131,6 +132,19 @@ Quick reference:
 | _(top-level)_ | `telemetry` | `true` / `false`: opt in/out of anonymous usage telemetry (only `global` and `user` config files; workspace cannot override — see [docs/config.md](config.md#scope-restriction-policy)) |
 
 Supported agent names: `amp`, `claude-code`, `cursor`, `github-copilot`, `cline`, `roo`, `codex`, `continue`, `gemini-cli`, `goose`, `kilo`, `kiro-cli`, `opencode`, `openhands`, `trae`, `warp`, `windsurf`, and more. Run `gaal info agent` for the full list.
+
+Registry installs:
+
+```bash
+gaal skill search react
+gaal skill install frontend-design
+gaal skill install frontend-design --project
+```
+
+`gaal skill install` defaults to `skills.sh`, writes `registry: skills.sh`,
+uses `npx skills find` for registry lookup, and installs globally by default
+(`global: true`). Pass `--project` to write `global: false`. Registry lookup
+requires `npx` on `PATH`.
 
 ---
 
