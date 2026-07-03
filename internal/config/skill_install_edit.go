@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strconv"
 
-	"gaal/internal/core/io/secfile"
+	"github.com/getgaal/gaal/internal/core/io/secfile"
 
 	"gopkg.in/yaml.v3"
 )

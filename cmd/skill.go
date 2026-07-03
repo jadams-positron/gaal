@@ -18,12 +18,12 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
-	"gaal/internal/config"
-	"gaal/internal/core/agent"
-	"gaal/internal/engine"
-	"gaal/internal/engine/render"
-	skillreg "gaal/internal/registry"
-	"gaal/internal/telemetry"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/core/agent"
+	"github.com/getgaal/gaal/internal/engine"
+	"github.com/getgaal/gaal/internal/engine/render"
+	skillreg "github.com/getgaal/gaal/internal/registry"
+	"github.com/getgaal/gaal/internal/telemetry"
 )
 
 var (

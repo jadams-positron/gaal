@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	skillreg "gaal/internal/registry"
+	skillreg "github.com/getgaal/gaal/internal/registry"
 )
 
 func TestResolveSkillInstallAgents(t *testing.T) {
