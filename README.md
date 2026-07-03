@@ -176,7 +176,7 @@ gaal auto-detects 17 coding agents. Use `agents: ["*"]` and a skill or MCP lands
 |---|---|---|
 | Claude Code | Cursor | Codex |
 | GitHub Copilot | Amp | Cline |
-| Roo | Continue | Gemini CLI |
+| Roo | Continue | Antigravity CLI |
 | Goose | Kilo | Kiro CLI |
 | OpenCode | OpenHands | Trae |
 | Warp | Windsurf | |
