@@ -1,4 +1,26 @@
-# gaal
+<h1 align="center">
+  <a href="https://getgaal.com" target="_blank">
+    <img src="docs/assets/gaal-banner.png" alt="gaal: Governed Agent Access Layer" width="100%">
+  </a>
+</h1>
+
+<p align="center">
+  <b>One YAML to keep your AI coding agents in sync.</b><br/>
+  Skills, MCP servers, and repositories, reconciled across every agent on every machine.
+</p>
+
+<div align="center">
+  <img src="docs/assets/gaal-demo.gif" alt="Editing gaal.yaml, then gaal sync reconciling every agent" width="100%">
+</div>
+
+<p align="center">
+  <a href="https://getgaal.com"><b>Website</b></a> &nbsp;•&nbsp;
+  <a href="https://docs.getgaal.com"><b>Docs</b></a> &nbsp;•&nbsp;
+  <a href="docs/quick_start.md"><b>Quick start</b></a> &nbsp;•&nbsp;
+  <a href="https://github.com/getgaal/gaal/issues/new/choose"><b>Report a bug</b></a>
+</p>
+
+<div align="center">
 
 [![Release](https://img.shields.io/github/v/release/getgaal/gaal)](https://github.com/getgaal/gaal/releases)
 [![CI](https://github.com/getgaal/gaal/actions/workflows/ci.yml/badge.svg)](https://github.com/getgaal/gaal/actions/workflows/ci.yml)
@@ -6,31 +28,30 @@
 [![Go 1.26+](https://img.shields.io/badge/go-1.26%2B-00ADD8.svg)](go.mod)
 [![GitHub stars](https://img.shields.io/github/stars/getgaal/gaal?style=social)](https://github.com/getgaal/gaal/stargazers)
 
-> **G**overned **A**gent **A**ccess **L**ayer — a single CLI to keep your local repositories, AI agent skills, and MCP server configurations in sync.
-
-📚 Full docs: [docs.getgaal.com](https://docs.getgaal.com)
-
-```
-  ██████╗  █████╗  █████╗ ██╗
- ██╔════╝ ██╔══██╗██╔══██╗██║
- ██║  ███╗███████║███████║██║
- ██║   ██║██╔══██║██╔══██║██║
- ╚██████╔╝██║  ██║██║  ██║███████╗
-  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
-  Repository · Skills · MCP
-```
+</div>
 
 ---
 
 If you use more than one AI coding agent (Claude Code, Cursor, Codex, GitHub Copilot, …) across more than one machine, gaal keeps your skills, MCP servers, and repositories in one YAML and reconciles every agent on every machine to match.
 
-## What it does
+## Features
 
-| Resource | Description |
-|----------|-------------|
-| **Repositories** | Clone or update multi-protocol repos (git, hg, svn, bzr, tar, zip) from a single YAML file |
-| **Skills** | Download and install `SKILL.md` collections into your local AI agent directories (Claude, Copilot, Cursor, …) |
-| **MCPs** | Upsert MCP server entries into agent JSON config files without overwriting your existing configuration |
+gaal manages five things from a single `gaal.yaml`:
+
+1. **Repositories**: code repos cloned and pinned to a version (git, hg, svn, bzr, tar, zip)
+2. **Skills**: AI agent skills (`SKILL.md` collections) installed into each agent's directory
+3. **Content**: files your agents read directly (`AGENTS.md`, `CLAUDE.md`, rule files) copied into place
+4. **MCP servers**: server entries upserted into each agent's config, leaving the rest of the file untouched
+5. **Sync commands**: `sync`, `status`, `doctor`, and `--dry-run` to reconcile and inspect everything above
+
+And it does that with:
+
+- [x] **Per-agent targeting**: send any of the above to one agent, a chosen few, or `["*"]` for all
+- [x] **17 agents auto-detected**: Claude Code, Cursor, Codex, Copilot, Gemini CLI, Windsurf, and more
+- [x] **Every machine identical**: run it once, or as a background service that keeps things in sync
+- [x] **Drift and health checks**: `gaal status` and `gaal doctor` show what is out of sync or broken
+- [x] **Safe by default**: `gaal sync --dry-run` previews every change before a single file is written
+- [x] **Yours alone**: no telemetry by default; secrets stay as env references, never written to disk
 
 Plus a lightweight **tools** check: `gaal doctor` and `gaal sync` verify that required CLI binaries (e.g. `gh`, `fnm`) are on PATH and surface install hints when they are missing.
 
@@ -38,27 +59,47 @@ Plus a lightweight **tools** check: `gaal doctor` and `gaal sync` verify that re
 
 ## The YAML
 
-One file. Three resources. Every agent.
+One file. Every agent.
 
 ```yaml
 schema: 1
 
+# 1. code repos to keep cloned
 repositories:
-  - source: github.com/getgaal/gaal
-    path: ~/code/gaal
+  src/gaal:
+    type: git
+    url: https://github.com/getgaal/gaal.git
+    version: v0.3.0
 
+# 2. AI agent skills
 skills:
-  - source: github.com/obra/superpowers
+  - source: obra/superpowers
+    # auto-detect every installed agent
     agents: ["*"]
+    # shared across projects
     global: true
 
+# 3. files agents read directly
+content:
+  - source: ./agent-files
+    agents: ["claude-code"]
+    paths:
+      AGENTS.md: CLAUDE.md
+
+# 4. MCP servers
 mcps:
-  - inline:
-      mcpServers:
-        context7:
-          command: npx
-          args: ["-y", "@upstash/context7-mcp"]
+  - name: context7
     agents: ["claude-code", "cursor", "codex"]
+    global: true
+    inline:
+      command: npx
+      args: ["-y", "@upstash/context7-mcp"]
+
+# 5. commands around sync
+hooks:
+  post-sync:
+    - command: git
+      args: ["-C", "~/docs", "pull"]
 ```
 
 Run `gaal sync`. gaal figures out which agents are installed and writes to the right place for each.
@@ -483,6 +524,12 @@ make sandbox   # one-shot sync in an isolated /tmp directory
 
 See [`docs/testing.md`](docs/testing.md) for the e2e test suite, and
 [`docs/architecture.md`](docs/architecture.md) for a full description of the internals.
+
+---
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to set up, test, and open a pull request, and please follow our [Code of Conduct](CODE_OF_CONDUCT.md). To report a security issue, see [SECURITY.md](SECURITY.md).
 
 ---
 
