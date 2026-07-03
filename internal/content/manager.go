@@ -14,11 +14,11 @@ import (
 	"sort"
 	"strings"
 
-	"gaal/internal/config"
-	"gaal/internal/core/agent"
-	"gaal/internal/core/vcs"
-	"gaal/internal/discover"
-	"gaal/internal/urlx"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/core/agent"
+	"github.com/getgaal/gaal/internal/core/vcs"
+	"github.com/getgaal/gaal/internal/discover"
+	"github.com/getgaal/gaal/internal/urlx"
 )
 
 type PathStatus struct {

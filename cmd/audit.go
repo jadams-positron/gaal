@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
-	"gaal/internal/config"
-	"gaal/internal/engine"
-	"gaal/internal/engine/render"
-	"gaal/internal/telemetry"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/engine"
+	"github.com/getgaal/gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/telemetry"
 )
 
 var auditCmd = &cobra.Command{

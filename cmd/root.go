@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
-	"gaal/internal/config"
-	"gaal/internal/engine"
-	"gaal/internal/logger"
-	"gaal/internal/telemetry"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/engine"
+	"github.com/getgaal/gaal/internal/logger"
+	"github.com/getgaal/gaal/internal/telemetry"
 )
 
 // ExitCodeError carries a process exit code separate from the error's

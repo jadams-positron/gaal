@@ -11,10 +11,10 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 
-	"gaal/internal/config"
-	"gaal/internal/engine"
-	"gaal/internal/engine/render"
-	"gaal/internal/telemetry"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/engine"
+	"github.com/getgaal/gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/telemetry"
 )
 
 var (

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 // buildSkillDir creates a directory with a SKILL.md file and returns the root.

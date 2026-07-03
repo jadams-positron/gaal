@@ -8,8 +8,8 @@ import (
 
 	"github.com/pterm/pterm"
 
-	"gaal/internal/config"
-	"gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/engine/render"
 )
 
 // ── renderRepoInfo ────────────────────────────────────────────────────────────

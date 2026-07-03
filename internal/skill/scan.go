@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	ioyaml "gaal/internal/core/io/yaml"
+	ioyaml "github.com/getgaal/gaal/internal/core/io/yaml"
 )
 
 // Meta holds the discovered metadata of a single skill (a directory that

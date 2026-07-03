@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"gaal/internal/core/agent"
-	ioyaml "gaal/internal/core/io/yaml"
-	"gaal/internal/core/vcs"
+	"github.com/getgaal/gaal/internal/core/agent"
+	ioyaml "github.com/getgaal/gaal/internal/core/io/yaml"
+	"github.com/getgaal/gaal/internal/core/vcs"
 )
 
 // scanGlobal discovers skill resources at predictable agent-registry paths.

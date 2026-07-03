@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 func TestDoctorCleanConfig(t *testing.T) {

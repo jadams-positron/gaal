@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"sync"
 
-	"gaal/internal/config"
-	"gaal/internal/core/vcs"
-	"gaal/internal/urlx"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/core/vcs"
+	"github.com/getgaal/gaal/internal/urlx"
 )
 
 // Status holds the sync state of a single repository.

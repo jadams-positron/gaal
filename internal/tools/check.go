@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 // SourceWorkspace is the attribution string used for tools declared at the

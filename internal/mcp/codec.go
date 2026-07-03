@@ -10,7 +10,7 @@ import (
 
 	toml "github.com/pelletier/go-toml/v2"
 
-	"gaal/internal/core/io/secfile"
+	"github.com/getgaal/gaal/internal/core/io/secfile"
 )
 
 // mcpCodec abstracts reading and writing the MCP-server table inside an

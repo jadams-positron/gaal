@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/engine/render"
 )
 
 func TestRenderAgentsSummary(t *testing.T) {

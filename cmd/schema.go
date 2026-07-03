@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"gaal/internal/config"
+	"github.com/getgaal/gaal/internal/config"
 )
 
 var schemaFile string

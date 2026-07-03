@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"time"
 
-	ioyaml "gaal/internal/core/io/yaml"
+	ioyaml "github.com/getgaal/gaal/internal/core/io/yaml"
 
-	"gaal/internal/config"
-	configtemplate "gaal/internal/config/template"
-	"gaal/internal/core/io/secfile"
+	"github.com/getgaal/gaal/internal/config"
+	configtemplate "github.com/getgaal/gaal/internal/config/template"
+	"github.com/getgaal/gaal/internal/core/io/secfile"
 )
 
 // Init writes the documented gaal.yaml skeleton to dest.

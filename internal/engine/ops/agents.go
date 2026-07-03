@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	"gaal/internal/core/agent"
-	"gaal/internal/engine/render"
-	"gaal/internal/skill"
+	"github.com/getgaal/gaal/internal/core/agent"
+	"github.com/getgaal/gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/skill"
 )
 
 // ListAgents returns all registered agents with installed-detection,

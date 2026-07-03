@@ -13,9 +13,9 @@ import (
 	"github.com/invopop/jsonschema"
 	"gopkg.in/yaml.v3"
 
-	"gaal/internal/config/platform"
-	"gaal/internal/config/schema"
-	ioyaml "gaal/internal/core/io/yaml"
+	"github.com/getgaal/gaal/internal/config/platform"
+	"github.com/getgaal/gaal/internal/config/schema"
+	ioyaml "github.com/getgaal/gaal/internal/core/io/yaml"
 )
 
 // DefaultHookTimeout is the timeout applied when a hook does not declare one.

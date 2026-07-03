@@ -12,13 +12,13 @@ import (
 
 	"github.com/pterm/pterm"
 
-	"gaal/internal/config"
-	"gaal/internal/content"
-	"gaal/internal/core/agent"
-	"gaal/internal/engine/render"
-	"gaal/internal/mcp"
-	"gaal/internal/repo"
-	"gaal/internal/skill"
+	"github.com/getgaal/gaal/internal/config"
+	"github.com/getgaal/gaal/internal/content"
+	"github.com/getgaal/gaal/internal/core/agent"
+	"github.com/getgaal/gaal/internal/engine/render"
+	"github.com/getgaal/gaal/internal/mcp"
+	"github.com/getgaal/gaal/internal/repo"
+	"github.com/getgaal/gaal/internal/skill"
 )
 
 // Info renders a detailed view for the given package type.
