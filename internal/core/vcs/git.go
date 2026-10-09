@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -45,7 +46,7 @@ func (g *VcsGit) Clone(ctx context.Context, url, path, version string) error {
 
 	r, err := gogit.PlainCloneContext(ctx, path, false, &gogit.CloneOptions{
 		URL:               url,
-		RecurseSubmodules: gogit.DefaultSubmoduleRecursionDepth,
+		RecurseSubmodules: gogit.NoRecurseSubmodules,
 		Tags:              gogit.AllTags,
 		Depth:             g.depth(),
 	})
@@ -54,7 +55,49 @@ func (g *VcsGit) Clone(ctx context.Context, url, path, version string) error {
 	}
 
 	if version != "" {
-		return checkoutVersion(r, version)
+		if err := checkoutVersion(r, version); err != nil {
+			return err
+		}
+	}
+	// go-git's recursion depth counts descendants below each direct submodule.
+	return cloneGitSubmodules(ctx, r, gogit.DefaultSubmoduleRecursionDepth+1)
+}
+
+func cloneGitSubmodules(ctx context.Context, r *gogit.Repository, remaining gogit.SubmoduleRescursivity) error {
+	slog.DebugContext(ctx, "cloning validated submodules", "remaining_depth", remaining)
+	w, err := r.Worktree()
+	if err != nil {
+		return err
+	}
+	submodules, err := w.Submodules()
+	if err != nil {
+		return fmt.Errorf("reading submodules: %w", err)
+	}
+	for _, sub := range submodules {
+		cfg := sub.Config()
+		if err := urlx.ValidateRepoURL(cfg.URL); err != nil {
+			return fmt.Errorf("submodule %q: %w", cfg.Path, err)
+		}
+		// Reject absolute paths from untrusted metadata, including foreign Windows paths.
+		if filepath.IsAbs(cfg.URL) || strings.HasPrefix(cfg.URL, `\`) || (len(cfg.URL) >= 2 && cfg.URL[1] == ':') {
+			return fmt.Errorf("submodule %q: absolute local URLs are not allowed", cfg.Path)
+		}
+		if remaining == 0 {
+			return fmt.Errorf("submodule %q: recursion limit exceeded", cfg.Path)
+		}
+		if err := sub.UpdateContext(ctx, &gogit.SubmoduleUpdateOptions{
+			Init:              true,
+			RecurseSubmodules: gogit.NoRecurseSubmodules,
+		}); err != nil {
+			return fmt.Errorf("updating submodule %q: %w", cfg.Path, err)
+		}
+		child, err := sub.Repository()
+		if err != nil {
+			return fmt.Errorf("opening submodule %q: %w", cfg.Path, err)
+		}
+		if err := cloneGitSubmodules(ctx, child, remaining-1); err != nil {
+			return fmt.Errorf("submodule %q: %w", cfg.Path, err)
+		}
 	}
 	return nil
 }

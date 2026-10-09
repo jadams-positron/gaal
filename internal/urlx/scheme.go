@@ -2,6 +2,7 @@ package urlx
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
 	"net/url"
 	"strings"
@@ -143,8 +144,9 @@ func isWindowsDrivePath(s string) bool {
 // match it heuristically: a single ":" with no "/" before it, and the part
 // before "@" is non-empty.
 func isSCPStyleGitURL(s string) bool {
+	slog.Debug("checking SCP-style repository URL", "length", len(s))
 	at := strings.Index(s, "@")
-	if at <= 0 {
+	if at <= 0 || strings.ContainsAny(s[:at], ":/") {
 		return false
 	}
 	rest := s[at+1:]
