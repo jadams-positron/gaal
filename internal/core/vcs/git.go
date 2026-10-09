@@ -234,7 +234,17 @@ func (g *VcsGit) checkoutVersion(r *gogit.Repository, version string) error {
 		Branch: plumbing.NewBranchReferenceName(version),
 		Force:  g.Shallow,
 	}); err == nil {
-		return nil
+		if g.Shallow {
+			return nil
+		}
+		ref, err := r.Reference(plumbing.NewRemoteReferenceName("origin", version), true)
+		if errors.Is(err, plumbing.ErrReferenceNotFound) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		return fastForward(r, ref)
 	}
 
 	// 2. Remote-tracking branch — create a local branch pointing at origin/<version>.

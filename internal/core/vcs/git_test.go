@@ -267,6 +267,53 @@ func TestVcsGit_Update_AfterClone(t *testing.T) {
 	_ = err
 }
 
+func TestVcsGit_Update_PinnedBranch(t *testing.T) {
+	slog.Debug("testing pinned branch updates", "test", t.Name())
+	testBranchUpdates(t, true)
+}
+
+func TestVcsGit_Update_TagAndCommitStayPinned(t *testing.T) {
+	slog.Debug("testing immutable version pins", "test", t.Name())
+	useInProcessGit(t)
+	for _, pin := range []string{"tag", "commit"} {
+		t.Run(pin, func(t *testing.T) {
+			slog.Debug("testing fixed version update", "pin", pin)
+			src := t.TempDir()
+			r := makeLocalRepo(t, src)
+			initial, err := r.Head()
+			if err != nil {
+				t.Fatal(err)
+			}
+			version := initial.Hash().String()
+			if pin == "tag" {
+				version = "v1"
+				if _, err := r.CreateTag(version, initial.Hash(), nil); err != nil {
+					t.Fatal(err)
+				}
+			}
+			dst := filepath.Join(t.TempDir(), "clone")
+			g := &VcsGit{}
+			if err := g.Clone(t.Context(), src, dst, version); err != nil {
+				t.Fatal(err)
+			}
+			commitFile(t, src, "UPSTREAM.md", "upstream work\n")
+			if err := g.Update(t.Context(), src, dst, version); err != nil {
+				t.Fatal(err)
+			}
+			cloned, err := gogit.PlainOpen(dst)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, err := cloned.Head(); err != nil || got.Hash() != initial.Hash() {
+				t.Errorf("HEAD = %v, %v; want pinned commit %s", got, err, initial.Hash())
+			}
+			if _, err := os.Stat(filepath.Join(dst, "UPSTREAM.md")); !errors.Is(err, os.ErrNotExist) {
+				t.Errorf("upstream file should not exist at pin: %v", err)
+			}
+		})
+	}
+}
+
 func TestVcsGit_Clone_WithVersion(t *testing.T) {
 	srcDir := t.TempDir()
 	r := makeLocalRepo(t, srcDir)
