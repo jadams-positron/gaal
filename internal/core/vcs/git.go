@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 
 	gogit "github.com/go-git/go-git/v5"
+	gitconfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 
 	"github.com/getgaal/gaal/internal/urlx"
 )
@@ -54,7 +56,7 @@ func (g *VcsGit) Clone(ctx context.Context, url, path, version string) error {
 	}
 
 	if version != "" {
-		return checkoutVersion(r, version)
+		return g.checkoutVersion(r, version)
 	}
 	return nil
 }
@@ -78,20 +80,36 @@ func (g *VcsGit) Update(ctx context.Context, url, path, version string) error {
 		}
 	}
 
+	if err := g.CheckUpdate(ctx, path); err != nil {
+		return err
+	}
+
 	slog.DebugContext(ctx, "fetching", "path", shortPath(path))
 
-	fetchErr := r.FetchContext(ctx, &gogit.FetchOptions{
+	options := &gogit.FetchOptions{
 		RemoteName: "origin",
 		Tags:       gogit.AllTags,
 		Force:      true,
 		Prune:      true,
-	})
+	}
+	if version == "" && !g.Shallow {
+		remote, err := r.Remote("origin")
+		if err != nil {
+			return err
+		}
+		options.RefSpecs = append([]gitconfig.RefSpec(nil), remote.Config().Fetch...)
+		options.RefSpecs = append(options.RefSpecs, "+HEAD:refs/remotes/origin/HEAD")
+	}
+	fetchErr := r.FetchContext(ctx, options)
 	if fetchErr != nil && !errors.Is(fetchErr, gogit.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("fetching: %w", fetchErr)
 	}
 
+	if err := g.CheckUpdate(ctx, path); err != nil {
+		return err
+	}
 	if version != "" {
-		return checkoutVersion(r, version)
+		return g.checkoutVersion(r, version)
 	}
 
 	if g.Shallow {
@@ -100,18 +118,23 @@ func (g *VcsGit) Update(ctx context.Context, url, path, version string) error {
 		return g.resetToRemoteHEAD(ctx, r)
 	}
 
-	// No pinned version: fast-forward the current tracking branch.
+	ref, err := r.Reference(plumbing.NewRemoteReferenceName("origin", "HEAD"), true)
+	if err != nil {
+		return err
+	}
+	return fastForward(r, ref)
+}
+
+func fastForward(r *gogit.Repository, ref *plumbing.Reference) error {
+	slog.Debug("fast-forwarding", "ref", ref.Name(), "hash", ref.Hash())
 	w, err := r.Worktree()
 	if err != nil {
 		return err
 	}
-	if err = w.PullContext(ctx, &gogit.PullOptions{
-		RemoteName: "origin",
-		Force:      true,
-	}); err != nil && !errors.Is(err, gogit.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("pulling: %w", err)
+	if err := r.Merge(*ref, gogit.MergeOptions{Strategy: gogit.FastForwardMerge}); err != nil {
+		return fmt.Errorf("fast-forwarding to %s: %w", ref.Name(), err)
 	}
-	return nil
+	return w.Reset(&gogit.ResetOptions{Commit: ref.Hash(), Mode: gogit.MergeReset})
 }
 
 // resetToRemoteHEAD hard-resets the working tree to the tip of origin's default
@@ -176,7 +199,7 @@ func (g *VcsGit) CurrentVersion(_ context.Context, path string) (string, error) 
 }
 
 // HasChanges reports whether the working tree contains modifications to
-// tracked files (staged or unstaged). Untracked files are ignored.
+// tracked files (staged or unstaged) or untracked files, including ignored files.
 func (g *VcsGit) HasChanges(ctx context.Context, path string) (bool, error) {
 	slog.DebugContext(ctx, "checking for local changes", "path", shortPath(path))
 
@@ -188,6 +211,8 @@ func (g *VcsGit) HasChanges(ctx context.Context, path string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("reading worktree: %w", err)
 	}
+	// Ignored files also need protection from checkout/reset.
+	w.Excludes = append(w.Excludes, gitignore.ParsePattern("!**", nil))
 	st, err := w.Status()
 	if err != nil {
 		return false, fmt.Errorf("reading status: %w", err)
@@ -197,7 +222,8 @@ func (g *VcsGit) HasChanges(ctx context.Context, path string) (bool, error) {
 
 // checkoutVersion resolves version (branch, tag, or commit hash) inside r
 // and checks it out. Resolution order: local branch → remote branch → tag → commit hash.
-func checkoutVersion(r *gogit.Repository, version string) error {
+func (g *VcsGit) checkoutVersion(r *gogit.Repository, version string) error {
+	slog.Debug("checking out version", "version", version, "shallow", g.Shallow)
 	w, err := r.Worktree()
 	if err != nil {
 		return err
@@ -206,7 +232,7 @@ func checkoutVersion(r *gogit.Repository, version string) error {
 	// 1. Local branch.
 	if err = w.Checkout(&gogit.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(version),
-		Force:  true,
+		Force:  g.Shallow,
 	}); err == nil {
 		return nil
 	}
@@ -217,21 +243,21 @@ func checkoutVersion(r *gogit.Repository, version string) error {
 			Hash:   ref.Hash(),
 			Branch: plumbing.NewBranchReferenceName(version),
 			Create: true,
-			Force:  true,
+			Force:  g.Shallow,
 		})
 	}
 
 	// 3. Tag.
 	if err = w.Checkout(&gogit.CheckoutOptions{
 		Branch: plumbing.NewTagReferenceName(version),
-		Force:  true,
+		Force:  g.Shallow,
 	}); err == nil {
 		return nil
 	}
 
 	// 4. Commit hash.
 	if hash := plumbing.NewHash(version); !hash.IsZero() {
-		return w.Checkout(&gogit.CheckoutOptions{Hash: hash, Force: true})
+		return w.Checkout(&gogit.CheckoutOptions{Hash: hash, Force: g.Shallow})
 	}
 
 	return fmt.Errorf("could not resolve %q as a branch, tag, or commit", version)

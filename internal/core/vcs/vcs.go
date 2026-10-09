@@ -28,20 +28,26 @@ type VCS interface {
 	CurrentVersion(ctx context.Context, path string) (string, error)
 
 	// HasChanges reports whether the working copy at path contains local
-	// modifications (tracked files added, deleted, or modified). Untracked
-	// files are ignored for VCS types that support the distinction.
+	// modifications (tracked files added, deleted, or modified). Whether
+	// untracked files count as changes depends on the backend.
 	// Returns false when the working copy is clean (immutable state intact).
 	HasChanges(ctx context.Context, path string) (bool, error)
+}
+
+// UpdateChecker optionally reports local conditions that would prevent an update.
+type UpdateChecker interface {
+	CheckUpdate(ctx context.Context, path string) error
 }
 
 // Compile-time assertions: if any struct stops satisfying VCS, the build fails
 // with a clear error pointing to the missing method.
 var (
-	_ VCS = (*VcsGit)(nil)
-	_ VCS = (*VcsMercurial)(nil)
-	_ VCS = (*VcsSVN)(nil)
-	_ VCS = (*VcsBazaar)(nil)
-	_ VCS = (*VcsArchive)(nil)
+	_ VCS           = (*VcsGit)(nil)
+	_ VCS           = (*VcsMercurial)(nil)
+	_ VCS           = (*VcsSVN)(nil)
+	_ VCS           = (*VcsBazaar)(nil)
+	_ VCS           = (*VcsArchive)(nil)
+	_ UpdateChecker = (*VcsGit)(nil)
 )
 
 // New returns the VCS implementation for vcsType.

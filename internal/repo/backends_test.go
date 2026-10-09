@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -104,6 +105,32 @@ func TestManager_Status_CurrentVersionError(t *testing.T) {
 // ---------------------------------------------------------------------------
 // Manager.Status - Dirty propagation
 // ---------------------------------------------------------------------------
+
+func TestManager_Status_DirtyGitUpdateRefusal(t *testing.T) {
+	slog.Debug("testing backend update refusal in status", "test", t.Name())
+	for _, file := range []string{"README.md", "LOCAL.md"} {
+		t.Run(file, func(t *testing.T) {
+			slog.Debug("checking observed dirtiness and refusal", "file", file)
+			dir := makeLocalGitSource(t)
+			if err := os.WriteFile(filepath.Join(dir, file), []byte("local work\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			m := NewManager(map[string]config.ConfigRepo{dir: {Type: "git"}}, "")
+			statuses := m.Status(t.Context())
+			if len(statuses) != 1 {
+				t.Fatalf("got %d statuses; want one", len(statuses))
+			}
+			st := statuses[0]
+			var dirty *vcs.DirtyWorktreeError
+			if !st.Dirty || st.Err != nil || !errors.As(st.UpdateErr, &dirty) {
+				t.Errorf("status = %+v; want observed dirtiness and typed update refusal", st)
+			}
+			if got, err := os.ReadFile(filepath.Join(dir, file)); err != nil || string(got) != "local work\n" {
+				t.Errorf("status changed local file: %q, %v", got, err)
+			}
+		})
+	}
+}
 
 func TestManager_Status_DirtyFalse_Archive(t *testing.T) {
 	existing := t.TempDir()

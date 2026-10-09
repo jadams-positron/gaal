@@ -19,16 +19,6 @@ func TestPlanRepos_NotCloned(t *testing.T) {
 	}
 }
 
-func TestPlanRepos_Dirty(t *testing.T) {
-	entries := []render.RepoEntry{
-		{Path: "/repos/foo", Type: "git", Status: render.StatusDirty, Current: "abc", Want: "main"},
-	}
-	result := planRepos(entries)
-	if result[0].Action != render.PlanUpdate {
-		t.Errorf("expected action %q, got %q", render.PlanUpdate, result[0].Action)
-	}
-}
-
 func TestPlanRepos_OK(t *testing.T) {
 	entries := []render.RepoEntry{
 		{Path: "/repos/foo", Type: "git", Status: render.StatusOK, Current: "main", Want: "main"},

@@ -3,6 +3,8 @@ package vcs
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +13,7 @@ import (
 	gogit "github.com/go-git/go-git/v5"
 	gogitconfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport/client"
 )
 
 // setOrigin replaces origin's URL on the repo at dir.
@@ -81,6 +84,175 @@ func TestVcsGit_CurrentVersion_AfterClone(t *testing.T) {
 	if ver == "" {
 		t.Error("expected non-empty version string")
 	}
+}
+
+func TestVcsGit_CheckUpdate(t *testing.T) {
+	slog.Debug("testing read-only update checks", "test", t.Name())
+	for _, tc := range []struct {
+		name    string
+		file    string
+		shallow bool
+		refuse  bool
+	}{
+		{name: "clean"},
+		{name: "tracked", file: "README.md", refuse: true},
+		{name: "untracked", file: "LOCAL.md", refuse: true},
+		{name: "shallow", file: "README.md", shallow: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			slog.Debug("checking update without a remote", "scenario", tc.name)
+			dir := t.TempDir()
+			makeLocalRepo(t, dir)
+			if tc.file != "" {
+				if err := os.WriteFile(filepath.Join(dir, tc.file), []byte("local work\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			g := &VcsGit{Shallow: tc.shallow}
+			err := g.CheckUpdate(t.Context(), dir)
+			var dirty *DirtyWorktreeError
+			if errors.As(err, &dirty) != tc.refuse || (err != nil) != tc.refuse {
+				t.Errorf("CheckUpdate error = %v; want dirty refusal=%t", err, tc.refuse)
+			}
+			if tc.file != "" {
+				if got, err := os.ReadFile(filepath.Join(dir, tc.file)); err != nil || string(got) != "local work\n" {
+					t.Errorf("preflight changed local file: %q, %v", got, err)
+				}
+			}
+		})
+	}
+}
+
+func TestVcsGit_CheckUpdate_InvalidRepository(t *testing.T) {
+	slog.Debug("testing failed update inspection", "test", t.Name())
+	if err := (&VcsGit{}).CheckUpdate(t.Context(), t.TempDir()); err == nil {
+		t.Fatal("expected an inspection error for a non-repository")
+	}
+}
+
+func TestVcsGit_Update_Dirty(t *testing.T) {
+	slog.Debug("testing dirty repository refusal", "test", t.Name())
+	useInProcessGit(t)
+	for _, pin := range []string{"unpinned", "branch", "tag", "commit"} {
+		for _, change := range []string{"unstaged", "staged", "untracked", "ignored"} {
+			t.Run(pin+"/"+change, func(t *testing.T) {
+				slog.Debug("testing local file preservation", "pin", pin, "change", change)
+				src := t.TempDir()
+				r := makeLocalRepo(t, src)
+				if change == "ignored" {
+					commitFile(t, src, ".gitignore", "LOCAL.md\n")
+				}
+				head, err := r.Head()
+				if err != nil {
+					t.Fatal(err)
+				}
+				version := ""
+				switch pin {
+				case "branch":
+					version = head.Name().Short()
+				case "tag":
+					version = "v1"
+					if _, err := r.CreateTag(version, head.Hash(), nil); err != nil {
+						t.Fatal(err)
+					}
+				case "commit":
+					version = head.Hash().String()
+				}
+				dst := filepath.Join(t.TempDir(), "clone")
+				g := &VcsGit{}
+				if err := g.Clone(t.Context(), src, dst, version); err != nil {
+					t.Fatal(err)
+				}
+				file := "README.md"
+				if change == "untracked" || change == "ignored" {
+					file = "LOCAL.md"
+				}
+				if err := os.WriteFile(filepath.Join(dst, file), []byte("local work\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				cloned, err := gogit.PlainOpen(dst)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if change == "staged" {
+					w, err := cloned.Worktree()
+					if err != nil {
+						t.Fatal(err)
+					}
+					if _, err := w.Add(file); err != nil {
+						t.Fatal(err)
+					}
+				}
+				err = g.Update(t.Context(), src, dst, version)
+				var dirty *DirtyWorktreeError
+				if !errors.As(err, &dirty) {
+					t.Errorf("Update error = %v; want *DirtyWorktreeError", err)
+				} else if dirty.Path != dst || dirty.Error() == "" {
+					t.Errorf("dirty error = %+v; want repository path and explanation", dirty)
+				}
+				if got, err := os.ReadFile(filepath.Join(dst, file)); err != nil || string(got) != "local work\n" {
+					t.Errorf("local file after Update = %q, %v; want preserved local work", got, err)
+				}
+				if got, err := cloned.Head(); err != nil || got.Hash() != head.Hash() {
+					t.Errorf("HEAD changed after refused Update: %v, %v", got, err)
+				}
+			})
+		}
+	}
+}
+
+func TestVcsGit_Update_EditsDuringFetch(t *testing.T) {
+	slog.Debug("testing edits made during fetch", "test", t.Name())
+	for _, pinned := range []bool{false, true} {
+		for _, file := range []string{"README.md", "LOCAL.md"} {
+			t.Run(fmt.Sprintf("pinned=%t/%s", pinned, file), func(t *testing.T) {
+				slog.Debug("testing concurrent edit preservation", "pinned", pinned, "file", file)
+				useInProcessGit(t)
+				src := t.TempDir()
+				r := makeLocalRepo(t, src)
+				head, err := r.Head()
+				if err != nil {
+					t.Fatal(err)
+				}
+				version := ""
+				if pinned {
+					version = head.Name().Short()
+				}
+				dst := filepath.Join(t.TempDir(), "clone")
+				g := &VcsGit{}
+				if err := g.Clone(t.Context(), src, dst, version); err != nil {
+					t.Fatal(err)
+				}
+				commitFile(t, src, file, "upstream work\n")
+				client.InstallProtocol("file", fetchHook{Transport: client.Protocols["file"], onFetch: func() {
+					slog.Debug("saving edits during fetch", "file", file)
+					if err := os.WriteFile(filepath.Join(dst, file), []byte("local work\n"), 0o644); err != nil {
+						t.Fatal(err)
+					}
+				}})
+				err = g.Update(t.Context(), src, dst, version)
+				var dirty *DirtyWorktreeError
+				if !errors.As(err, &dirty) {
+					t.Errorf("Update error = %v; want *DirtyWorktreeError", err)
+				}
+				if got, err := os.ReadFile(filepath.Join(dst, file)); err != nil || string(got) != "local work\n" {
+					t.Errorf("local file after fetch = %q, %v; want preserved work", got, err)
+				}
+				cloned, err := gogit.PlainOpen(dst)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got, err := cloned.Head(); err != nil || got.Hash() != head.Hash() {
+					t.Errorf("HEAD changed after refused Update: %v, %v", got, err)
+				}
+			})
+		}
+	}
+}
+
+func TestVcsGit_Update_UnpinnedBranch(t *testing.T) {
+	slog.Debug("testing unpinned branch updates", "test", t.Name())
+	testBranchUpdates(t, false)
 }
 
 func TestVcsGit_Update_AfterClone(t *testing.T) {
@@ -178,7 +350,7 @@ func TestVcsGit_CurrentVersion_DetachedHEAD(t *testing.T) {
 func TestCheckoutVersion_InvalidVersion(t *testing.T) {
 	srcDir := t.TempDir()
 	r := makeLocalRepo(t, srcDir)
-	err := checkoutVersion(r, "totally-nonexistent-branch-or-tag-xyz")
+	err := (&VcsGit{}).checkoutVersion(r, "totally-nonexistent-branch-or-tag-xyz")
 	if err == nil {
 		t.Fatal("expected error for nonexistent version")
 	}
@@ -189,7 +361,7 @@ func TestCheckoutVersion_CommitHash(t *testing.T) {
 	r := makeLocalRepo(t, srcDir)
 	head, _ := r.Head()
 	hash := head.Hash().String()
-	if err := checkoutVersion(r, hash); err != nil {
+	if err := (&VcsGit{}).checkoutVersion(r, hash); err != nil {
 		t.Fatalf("checkoutVersion with commit hash: %v", err)
 	}
 }
@@ -200,7 +372,7 @@ func TestCheckoutVersion_ExistingLocalBranch(t *testing.T) {
 	head, _ := r.Head()
 	branchName := head.Name().Short() // "master" or "main"
 	// Checking out the current branch should succeed immediately (step 1).
-	if err := checkoutVersion(r, branchName); err != nil {
+	if err := (&VcsGit{}).checkoutVersion(r, branchName); err != nil {
 		t.Fatalf("checkoutVersion with existing branch %q: %v", branchName, err)
 	}
 }
@@ -359,12 +531,14 @@ func TestVcsGit_Clone_Shallow(t *testing.T) {
 }
 
 func TestVcsGit_Update_Shallow_ResetsToOrigin(t *testing.T) {
+	slog.Debug("testing shallow update policy", "test", t.Name())
+	useInProcessGit(t)
 	srcDir := t.TempDir()
 	r := makeLocalRepo(t, srcDir)
 	destDir := filepath.Join(t.TempDir(), "shallow")
 	g := &VcsGit{Shallow: true}
-	if err := g.Clone(context.Background(), srcDir, destDir, ""); err != nil {
-		t.Fatalf("shallow Clone: %v", err)
+	if err := (&VcsGit{}).Clone(context.Background(), srcDir, destDir, ""); err != nil {
+		t.Fatalf("Clone: %v", err)
 	}
 
 	// Add a new commit to the source using go-git.
@@ -382,8 +556,14 @@ func TestVcsGit_Update_Shallow_ResetsToOrigin(t *testing.T) {
 		t.Fatalf("Commit: %v", err)
 	}
 
+	if err := os.WriteFile(filepath.Join(destDir, "README.md"), []byte("cache edits"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if err := g.Update(context.Background(), "", destDir, ""); err != nil {
 		t.Fatalf("shallow Update: %v", err)
+	}
+	if got, err := os.ReadFile(filepath.Join(destDir, "README.md")); err != nil || string(got) != "hello" {
+		t.Errorf("shallow cache did not reset local edits: %q, %v", got, err)
 	}
 	// The new file should now exist in the destination.
 	if _, err := os.Stat(filepath.Join(destDir, "extra.txt")); err != nil {

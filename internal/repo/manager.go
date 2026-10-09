@@ -14,14 +14,15 @@ import (
 
 // Status holds the sync state of a single repository.
 type Status struct {
-	Path    string
-	Type    string
-	URL     string
-	Version string // configured version
-	Current string // current local version
-	Cloned  bool
-	Dirty   bool // true when local modifications are detected
-	Err     error
+	Path      string
+	Type      string
+	URL       string
+	Version   string // configured version
+	Current   string // current local version
+	Cloned    bool
+	Dirty     bool // true when local modifications are detected
+	Err       error
+	UpdateErr error // local refusal, independent of status inspection errors
 }
 
 // Manager handles the synchronisation of all repositories.
@@ -121,6 +122,9 @@ func (m *Manager) Status(ctx context.Context) []Status {
 				st.Current, st.Err = backend.CurrentVersion(ctx, path)
 				if st.Err == nil {
 					st.Dirty, st.Err = backend.HasChanges(ctx, path)
+				}
+				if checker, ok := backend.(vcs.UpdateChecker); ok && st.Err == nil {
+					st.UpdateErr = checker.CheckUpdate(ctx, path)
 				}
 			}
 
