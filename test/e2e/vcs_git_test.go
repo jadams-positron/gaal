@@ -106,29 +106,38 @@ func TestVCS_GitBackend_CloneAndCheckout(t *testing.T) {
 // initial Clone is the easy case; making sure subsequent Updates actually
 // pull is the surface that historically breaks (#125).
 func TestVCS_GitBackend_UpdateAfterUpstreamChange(t *testing.T) {
-	env := newTestEnv(t)
+	slog.Debug("testing upstream updates", "test", t.Name())
+	for _, tc := range []struct{ name, version string }{
+		{name: "unpinned"},
+		{name: "pinned-branch", version: "main"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			slog.Debug("testing upstream branch update", "version", tc.version)
+			env := newTestEnv(t)
 
-	reposRoot := path.Join(env.home, "test-repos")
-	env.c.MustExec(t, nil, "", "mkdir", "-p", reposRoot)
-	bare := initBareGitRepo(t, env, reposRoot, "updaterepo")
+			reposRoot := path.Join(env.home, "test-repos")
+			env.c.MustExec(t, nil, "", "mkdir", "-p", reposRoot)
+			bare := initBareGitRepo(t, env, reposRoot, "updaterepo")
 
-	cfg := newConfig().
-		AddRepository("src/updaterepo", "git", bare, "").
-		String()
-	cfgPath := env.writeProjectConfig(t, cfg)
+			cfg := newConfig().
+				AddRepository("src/updaterepo", "git", bare, tc.version).
+				String()
+			cfgPath := env.writeProjectConfig(t, cfg)
 
-	env.mustGaal(t, cfgPath, "sync")
+			env.mustGaal(t, cfgPath, "sync")
 
-	// Push a new commit to the bare repo and re-sync.
-	addCommitToBare(t, env, bare, "NEWFILE.md", "added later\n")
-	env.mustGaal(t, cfgPath, "sync")
+			addCommitToBare(t, env, bare, "NEWFILE.md", "added later\n")
+			result := env.mustGaal(t, cfgPath, "sync")
 
-	dst := path.Join(env.workdir, "src", "updaterepo", "NEWFILE.md")
-	if !env.c.FileExists(t, dst) {
-		t.Fatalf("expected NEWFILE.md after second sync (update path); not found")
-	}
-	if got := env.c.ReadFile(t, dst); got != "added later\n" {
-		t.Errorf("NEWFILE.md content mismatch: got %q", got)
+			dst := path.Join(env.workdir, "src", "updaterepo", "NEWFILE.md")
+			if !env.c.FileExists(t, dst) {
+				t.Fatalf("expected NEWFILE.md after second sync (update path); not found")
+			}
+			if got := env.c.ReadFile(t, dst); got != "added later\n" {
+				t.Errorf("NEWFILE.md content mismatch: got %q", got)
+			}
+			t.Logf("second gaal sync: exit=%d; NEWFILE.md contains added later", result.ExitCode)
+		})
 	}
 }
 
