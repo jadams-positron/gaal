@@ -77,6 +77,7 @@ func (jsonCodec) ReadServers(path string) (map[string]serverEntry, error) {
 }
 
 func (jsonCodec) WriteServers(path string, servers map[string]serverEntry) error {
+	slog.Debug("writing json mcp servers", "path", path, "count", len(servers))
 	// Decode the existing file preserving top-level key order so the
 	// rewrite doesn't churn the user's tracked dotfile (e.g. ~/.claude.json
 	// holds session state, MRU lists, projects alongside mcpServers; map
@@ -90,8 +91,27 @@ func (jsonCodec) WriteServers(path string, servers map[string]serverEntry) error
 	if err != nil {
 		return err
 	}
-	if _, ok := raw["mcpServers"]; !ok {
+	var encoded, existing map[string]map[string]json.RawMessage
+	if err := json.Unmarshal(serversBytes, &encoded); err != nil {
+		return err
+	}
+	if data, ok := raw["mcpServers"]; ok {
+		if err := json.Unmarshal(data, &existing); err != nil {
+			return fmt.Errorf("parsing mcpServers in %s: %w", path, err)
+		}
+	} else {
 		keys = append(keys, "mcpServers")
+	}
+	for name, fields := range encoded {
+		for key, value := range existing[name] {
+			if !isModeledServerField(key, true) {
+				fields[key] = value
+			}
+		}
+	}
+	serversBytes, err = json.Marshal(encoded)
+	if err != nil {
+		return err
 	}
 	raw["mcpServers"] = serversBytes
 
@@ -213,6 +233,7 @@ func (tomlCodec) ReadServers(path string) (map[string]serverEntry, error) {
 }
 
 func (tomlCodec) WriteServers(path string, servers map[string]serverEntry) error {
+	slog.Debug("writing toml mcp servers", "path", path, "count", len(servers))
 	doc := map[string]any{}
 	if data, err := os.ReadFile(path); err == nil && len(data) > 0 {
 		if err := toml.Unmarshal(data, &doc); err != nil {
@@ -223,9 +244,17 @@ func (tomlCodec) WriteServers(path string, servers map[string]serverEntry) error
 	if len(servers) == 0 {
 		delete(doc, tomlServersKey)
 	} else {
+		existing, _ := doc[tomlServersKey].(map[string]any)
 		table := make(map[string]any, len(servers))
 		for name, e := range servers {
-			table[name] = encodeTOMLEntry(e)
+			fields := encodeTOMLEntry(e)
+			stored, _ := existing[name].(map[string]any)
+			for key, value := range stored {
+				if !isModeledServerField(key, false) {
+					fields[key] = value
+				}
+			}
+			table[name] = fields
 		}
 		doc[tomlServersKey] = table
 	}
@@ -317,6 +346,16 @@ func encodeTOMLEntry(e serverEntry) map[string]any {
 		out["env_http_headers"] = encodeStringMap(e.EnvHTTPHeaders)
 	}
 	return out
+}
+
+func isModeledServerField(key string, ignoreCase bool) bool {
+	slog.Debug("classifying mcp server field", "field", key, "ignoreCase", ignoreCase)
+	for _, field := range []string{"type", "command", "args", "env", "url", "headers", "http_headers", "env_http_headers"} {
+		if key == field || (ignoreCase && strings.EqualFold(key, field)) {
+			return true
+		}
+	}
+	return false
 }
 
 func decodeStringMap(raw map[string]any) map[string]string {
