@@ -130,7 +130,7 @@ func runSync(_ *cobra.Command, _ []string) error {
 	}
 
 	duration := time.Since(start)
-	status, err := eng.Collect(ctx)
+	status, err := eng.CollectManaged(ctx)
 	if err != nil {
 		slog.Debug("post-sync status collection failed; skipping summary", "err", err)
 	} else {

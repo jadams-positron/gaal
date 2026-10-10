@@ -242,6 +242,12 @@ func (e *Engine) Collect(ctx context.Context) (*render.StatusReport, error) {
 	return ops.Collect(ctx, e.repos, e.skills, e.content, e.mcps, e.home, e.workDir, e.stateDir)
 }
 
+// CollectManaged gathers current config-declared resource status without filesystem discovery.
+func (e *Engine) CollectManaged(ctx context.Context) (*render.StatusReport, error) {
+	slog.DebugContext(ctx, "collecting managed engine status", "workDir", e.workDir)
+	return ops.CollectManaged(ctx, e.repos, e.skills, e.content, e.mcps)
+}
+
 // DryRun computes what sync would do and renders the plan to os.Stdout.
 // It returns the plan so the caller can inspect HasChanges / HasErrors for
 // exit code logic.

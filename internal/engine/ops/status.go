@@ -31,28 +31,31 @@ func Collect(ctx context.Context, repos *repo.Manager, skills *skill.Manager, co
 		slog.DebugContext(ctx, "discover scan error", "err", err)
 	}
 
+	report, err := CollectManaged(ctx, repos, skills, contentMgr, mcps)
+	if err != nil {
+		return nil, err
+	}
+
+	report.Repositories = reconcileRepos(report.Repositories, discovered)
+	report.Skills = reconcileSkills(report.Skills, discovered, home, workDir, skills.SourcePaths())
+	report.MCPs = reconcileMCPs(report.MCPs, discovered)
+	return report, nil
+}
+
+// CollectManaged gathers current config-declared resource status without filesystem discovery.
+func CollectManaged(ctx context.Context, repos *repo.Manager, skills *skill.Manager, contentMgr *content.Manager, mcps *mcp.Manager) (*render.StatusReport, error) {
+	slog.DebugContext(ctx, "collecting managed status", "scope", "configured")
+
 	agents, err := collectAgents()
 	if err != nil {
 		return nil, err
 	}
 
-	// Config-driven status (may add managed resources absent from FS scan).
-	configRepos := collectRepos(repos.Status(ctx))
-	configSkills := collectSkills(skills.Status(ctx))
-	configContent := collectContent(contentMgr.Status(ctx))
-	configMCPs := collectMCPs(mcps.Status(ctx))
-
-	// Reconcile: mark config-declared resources as managed and merge
-	// FS-discovered unmanaged resources into the report.
-	repoEntries := reconcileRepos(configRepos, discovered)
-	skillEntries := reconcileSkills(configSkills, discovered, home, workDir, skills.SourcePaths())
-	mcpEntries := reconcileMCPs(configMCPs, discovered)
-
 	return &render.StatusReport{
-		Repositories: repoEntries,
-		Skills:       skillEntries,
-		Content:      configContent,
-		MCPs:         mcpEntries,
+		Repositories: collectRepos(repos.Status(ctx)),
+		Skills:       collectSkills(skills.Status(ctx)),
+		Content:      collectContent(contentMgr.Status(ctx)),
+		MCPs:         collectMCPs(mcps.Status(ctx)),
 		Agents:       agents,
 	}, nil
 }
