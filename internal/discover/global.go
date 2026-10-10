@@ -47,7 +47,7 @@ func scanGlobal(ctx context.Context, home, workDir, stateDir string) ([]Resource
 			resources = append(resources, skillsFromDir(ctx, abs, ScopeGlobal, a.Name, stateDir, seen)...)
 		}
 		for _, pmRoot := range agent.ExpandedPmSkillsSearch(a.Name, home) {
-			skillDirs, err := walkSkillDirs(pmRoot)
+			skillDirs, err := walkSkillDirs(ctx, pmRoot)
 			if err != nil {
 				slog.DebugContext(ctx, "pm walk error", "agent", a.Name, "root", pmRoot, "err", err)
 				continue
@@ -65,6 +65,10 @@ func scanGlobal(ctx context.Context, home, workDir, stateDir string) ([]Resource
 // subdirectory that contains a SKILL.md file. dir itself is also checked.
 // Directories already present in seen are skipped.
 func skillsFromDir(ctx context.Context, dir string, scope Scope, agentName, stateDir string, seen map[string]struct{}) []Resource {
+	slog.DebugContext(ctx, "reading skill directory", "dir", dir, "agent", agentName)
+	if ctx.Err() != nil {
+		return nil
+	}
 	var out []Resource
 
 	add := func(skillDir string) {
@@ -94,6 +98,9 @@ func skillsFromDir(ctx context.Context, dir string, scope Scope, agentName, stat
 		return out
 	}
 	for _, e := range entries {
+		if ctx.Err() != nil {
+			return out
+		}
 		if !e.IsDir() {
 			continue
 		}
@@ -213,17 +220,25 @@ func extractDiscoverFrontmatter(data []byte) []byte {
 // walkSkillDirs recursively finds directories named "skills" under root.
 // Each found "skills" directory is appended to the result; the walk does not
 // descend into them.
-func walkSkillDirs(root string) ([]string, error) {
-	slog.Debug("walking for skill directories", "root", root)
+func walkSkillDirs(ctx context.Context, root string) ([]string, error) {
+	slog.DebugContext(ctx, "walking for skill directories", "root", root)
+	root = filepath.Clean(root)
 	var dirs []string
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return ctxErr
+		}
 		if err != nil {
 			return nil
 		}
 		if !d.IsDir() {
 			return nil
 		}
-		if filepath.Base(path) == "skills" {
+		rel, _ := filepath.Rel(root, path)
+		if depthOf(rel) > defaultMaxDepth || (skipDirs[d.Name()] && path != root) {
+			return filepath.SkipDir
+		}
+		if d.Name() == "skills" {
 			dirs = append(dirs, path)
 			return filepath.SkipDir
 		}

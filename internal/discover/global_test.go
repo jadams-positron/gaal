@@ -1,6 +1,9 @@
 package discover
 
 import (
+	"context"
+	"errors"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -211,7 +214,7 @@ func TestWalkSkillDirs(t *testing.T) {
 		}
 	}
 
-	dirs, err := walkSkillDirs(root)
+	dirs, err := walkSkillDirs(t.Context(), root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,9 +223,27 @@ func TestWalkSkillDirs(t *testing.T) {
 	}
 }
 
+// Justified: Scan absorbs walk errors, so cancellation propagation is checked here.
+func TestWalkSkillDirs_canceled(t *testing.T) {
+	slog.DebugContext(t.Context(), "testing canceled directory walk", "test", t.Name())
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "pkg", "skills"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	dirs, err := walkSkillDirs(ctx, root)
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("expected cancellation, got %v", err)
+	}
+	if len(dirs) != 0 {
+		t.Errorf("canceled walk found directories: %v", dirs)
+	}
+}
+
 // TestWalkSkillDirs_missing returns no error for a non-existent root.
 func TestWalkSkillDirs_missing(t *testing.T) {
-	dirs, err := walkSkillDirs(filepath.Join(t.TempDir(), "nope"))
+	dirs, err := walkSkillDirs(t.Context(), filepath.Join(t.TempDir(), "nope"))
 	if err != nil {
 		t.Fatal(err)
 	}
