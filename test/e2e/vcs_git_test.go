@@ -17,7 +17,9 @@
 package e2e
 
 import (
+	"log/slog"
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -162,6 +164,36 @@ func TestVCS_GitBackend_VersionPin(t *testing.T) {
 	if env.c.FileExists(t, later) {
 		t.Errorf("version pin (%s) did not hold: LATER.md from a later commit is present",
 			initial)
+	}
+}
+
+func TestVCS_GitBackend_DirtyCloneRefusesUpdate(t *testing.T) {
+	slog.Debug("testing dirty clone sync", "test", t.Name())
+	for _, version := range []string{"", "main"} {
+		for _, file := range []string{"README.md", "LOCAL.md", ".env"} {
+			t.Run(version+"/"+file, func(t *testing.T) {
+				slog.Debug("testing dirty clone preservation", "version", version, "file", file)
+				env := newTestEnv(t)
+				bare := initBareGitRepo(t, env, env.home, "dirtyrepo")
+				if file == ".env" {
+					addCommitToBare(t, env, bare, ".gitignore", ".env\n")
+				}
+				cfgPath := env.writeProjectConfig(t, newConfig().
+					AddRepository("src/dirtyrepo", "git", bare, version).String())
+				env.mustGaal(t, cfgPath, "sync")
+				dst := path.Join(env.workdir, "src", "dirtyrepo", file)
+				env.c.WriteFile(t, dst, "local work\n")
+
+				result := env.gaal(t, cfgPath, "sync")
+				if result.ExitCode == 0 || !strings.Contains(result.Combined(), "uncommitted local changes") {
+					t.Errorf("expected dirty clone refusal: exit=%d\n%s", result.ExitCode, result.Combined())
+				}
+				if got := env.c.ReadFile(t, dst); got != "local work\n" {
+					t.Errorf("local file = %q; want preserved local work", got)
+				}
+				t.Logf("gaal sync: exit=%d\n%s\n%s preserved", result.ExitCode, result.Combined(), file)
+			})
+		}
 	}
 }
 

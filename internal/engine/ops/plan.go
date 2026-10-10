@@ -87,6 +87,7 @@ func RenderPlan(ctx context.Context, repos *repo.Manager, skills *skill.Manager,
 }
 
 func planRepos(entries []render.RepoEntry) []render.PlanRepoEntry {
+	slog.Debug("planning repositories", "count", len(entries))
 	out := make([]render.PlanRepoEntry, 0, len(entries))
 	for _, e := range entries {
 		// Skip FS-discovered resources outside the config: sync only acts on
@@ -101,13 +102,16 @@ func planRepos(entries []render.RepoEntry) []render.PlanRepoEntry {
 			Current: e.Current,
 			Want:    e.Want,
 		}
-		switch e.Status {
-		case render.StatusError:
+		switch {
+		case e.Status == render.StatusError:
 			p.Action = render.PlanError
 			p.Error = e.Error
-		case render.StatusNotCloned:
+		case e.UpdateError != "":
+			p.Action = render.PlanError
+			p.Error = e.UpdateError
+		case e.Status == render.StatusNotCloned:
 			p.Action = render.PlanClone
-		case render.StatusDirty:
+		case e.Status == render.StatusDirty:
 			p.Action = render.PlanUpdate
 		default:
 			p.Action = render.PlanNoOp

@@ -16,14 +16,15 @@ const (
 
 // RepoEntry holds the status of a single repository.
 type RepoEntry struct {
-	Path    string     `json:"path"`
-	Type    string     `json:"type"`
-	Status  StatusCode `json:"status"`
-	Dirty   bool       `json:"dirty,omitempty"`
-	Current string     `json:"current,omitempty"`
-	Want    string     `json:"want,omitempty"`
-	URL     string     `json:"url,omitempty"`
-	Error   string     `json:"error,omitempty"`
+	Path        string     `json:"path"`
+	Type        string     `json:"type"`
+	Status      StatusCode `json:"status"`
+	Dirty       bool       `json:"dirty,omitempty"`
+	Current     string     `json:"current,omitempty"`
+	Want        string     `json:"want,omitempty"`
+	URL         string     `json:"url,omitempty"`
+	Error       string     `json:"error,omitempty"`
+	UpdateError string     `json:"update_error,omitempty"`
 }
 
 // SkillEntry holds the status of a single skill configuration.

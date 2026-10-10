@@ -229,9 +229,13 @@ func driftToStatus(d discover.DriftState) render.StatusCode {
 }
 
 func collectRepos(stats []repo.Status) []render.RepoEntry {
+	slog.Debug("collecting repository status", "count", len(stats))
 	entries := make([]render.RepoEntry, 0, len(stats))
 	for _, st := range stats {
 		e := render.RepoEntry{Path: st.Path, Type: st.Type, URL: st.URL}
+		if st.UpdateErr != nil {
+			e.UpdateError = st.UpdateErr.Error()
+		}
 		switch {
 		case st.Err != nil:
 			e.Status = render.StatusError
